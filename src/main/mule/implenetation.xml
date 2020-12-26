@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="011a7deb-537f-4801-a20f-963627b93964" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="6290c3f4-eea2-4be5-b0ca-cb168fb8cb31" >
+		<db:my-sql-connection host="mudb.learn.mulesoft.com" port="3306" user="mule" password="mule" database="training" />
+	</db:config>
+	<flow name="getAccounts" doc:id="7e8699a0-c545-4f15-bf5c-11266a11caf9" >
+		<db:select doc:name="Select" doc:id="565639bd-1924-4f64-bf78-d4e91a5bcc15" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM flights_customers]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="441eb08a-ac2f-49b5-b57c-c8f5cbbffe6d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+%dw 2.0
+output application/json
+fun split(data) = data splitBy (" ")
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+    id: payload01.accountID default "",
+    address: ((payload01.street default "") ++ (payload01.city default "")) ++ (payload01.state default ""),
+    postal: payload01.postal default "",
+    country: payload01.country default "",
+    creationDate: payload01.creationDate as String default "",
+    accountType: payload01.accountType default "",
+    firstName: split(payload01.name)[0],
+    lastName: split(payload01.name)[1],
+    miles: payload01.miles default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="123504ae-0bb8-4ab1-9214-65af4a802f93" />
+	</flow>
+	<flow name="postAccounts" doc:id="0fd7ca54-65c9-4361-ac5c-9b5dd273f274" >
+		<set-payload value='"post request output"' doc:name="Set Payload" doc:id="0b7065c3-ab56-4803-8025-03134daac173" />
+	</flow>
+</mule>
